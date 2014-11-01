@@ -2,16 +2,20 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <list>
 #include <string.h>
 #include <assert.h>
 using namespace std;
 
-#define TAB_SIZE (9)
+#define NUM_BASE 10
+#define TAB_SIZE (NUM_BASE-1)
+
 //#define NDEBUG //comment out to disable asserts
 
 
 void loadCSV(string path,int[TAB_SIZE][TAB_SIZE]);
-bool solvePuzzle(int table[TAB_SIZE][TAB_SIZE]);
+bool solvePuzzle(int table[TAB_SIZE][TAB_SIZE],list<int> _options[TAB_SIZE][TAB_SIZE]);
+void calcOptions(int table[TAB_SIZE][TAB_SIZE],list<int> options[TAB_SIZE][TAB_SIZE]);
 void printCSV(string out_path,int table[TAB_SIZE][TAB_SIZE]);
 
 int main(int argc,char* argv[])
@@ -47,7 +51,9 @@ int main(int argc,char* argv[])
 	loadCSV(in_path,table);
 
 	//solving the puzzle
-	//solvePuzzle(table);
+	list<int> options[TAB_SIZE][TAB_SIZE];
+	calcOptions(table,options);
+	solvePuzzle(table,options);
 
 	//printing the output in a CSV file
 	printCSV(out_path,table);
@@ -55,6 +61,52 @@ int main(int argc,char* argv[])
 	return 0;
 }
 
+
+bool solvePuzzle(int _table[TAB_SIZE][TAB_SIZE],list<int> _options[TAB_SIZE][TAB_SIZE])
+{
+	bool found=false;
+	//making a copy of options and table to be editted safely.
+	list<int> options[TAB_SIZE][TAB_SIZE];
+	int table[TAB_SIZE][TAB_SIZE];
+	for(int i=0;i<TAB_SIZE;i++)
+		for(int j=0;j<TAB_SIZE;j++)
+		{
+			options[i][j]=_options[i][j];
+			table[i][j]=_table[i][j];
+		}
+
+	//finding the first unkonwn cell
+	int row,column;
+	for(int row=0;row<TAB_SIZE;row++)
+	{
+		for(column=0;column<TAB_SIZE;column++)
+			if(table[row][column]==0)
+				break;
+		if(column<TAB_SIZE)
+			break;
+	}
+
+	//backtracking over the possible options:
+	
+	for(list<int>::iterator it=options[row][column].begin ; it<options[row][column].end;it++)
+	{
+		table[row][column]=(*it);
+		//updating the options for other cells:
+
+		found = solvePuzzle(table,options);
+		if (found)
+			break;
+	}
+
+	//if answer is found, copying back the answer to table
+	if(found)
+	{
+		for(int i=0;i<TAB_SIZE;i++)
+		for(int j=0;j<TAB_SIZE;j++)
+			_table[i][j]=table[i][j];
+	}
+
+}
 
 void loadCSV(string path,int table[TAB_SIZE][TAB_SIZE])
 {
@@ -105,4 +157,38 @@ void printCSV(string out_path,int table[TAB_SIZE][TAB_SIZE])
 	}
 	fout.flush();
 	fout.close();
+}
+
+void calcOptions(int table[TAB_SIZE][TAB_SIZE],list<int> options[TAB_SIZE][TAB_SIZE])
+{
+	for(int i=0;i<TAB_SIZE;i++)
+	{
+		for(int j=0;j<TAB_SIZE;j++)
+		{
+			if(table[i][j]!=0)
+				continue;
+			int hash[TAB_SIZE+1];
+			memset(hash,0,sizeof(hash));
+			//noting down the numbers not allowed for each cell in the table
+			//numbers taken on the row:
+			for(int k=0;k<TAB_SIZE;k++)
+				if(table[i][k]!=0)
+					hash[table[i][k]]=1;
+			//numbers taken on the column
+			for(int k=0;k<TAB_SIZE;k++)
+				if(table[k][j]!=0)
+					hash[table[k][j]]=1;
+			//numbers taken in the small surronding square (assuming it is always a 3x3 square, for base 10 numbers)
+			int limit= (int)sqrt(TAB_SIZE); //size of the small squares.
+			for(int k=0;k<limit;k++)
+				for(int m=0;m<limit;k++)
+					if(table[i- (i%limit)+k][j- (j*limit)+m]!=0)
+						hash[table[i- (i%limit)+k][j- (j*limit)+m]]=1;
+
+			//adding the reamining options to the list
+			for(int k=1;k<TAB_SIZE+1;k++)
+				if(hash[k]==0)
+					options[i][j].push_back(k);
+		}
+	}
 }
