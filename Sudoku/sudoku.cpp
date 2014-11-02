@@ -24,7 +24,7 @@ private:
 public:
 
 	/**
-	* The number base can be any integer^2, i.e., 4,9(default),16,25,... for 25 it takes a few hours though!
+	* The number base can be any integer^2, i.e., 4,9(default),16,25,... for 25 it might take a few years though!
 	*/
 	Sudoku(int tab_size=9):TAB_SIZE(tab_size)
 	{
@@ -32,6 +32,10 @@ public:
 		{
 			cerr<<"ERROR: the size of the table should be the complete square of an integer.\n Quitting..."<<endl;
 			exit(EXIT_FAILURE);
+		}
+		if(TAB_SIZE>16)
+		{
+			cout<<"Warning! The size of the problem is very high, it may take a very very long time to be solved"<<endl;
 		}
 		table = new int*[TAB_SIZE];
 		for(int i=0;i<TAB_SIZE;i++)
@@ -71,7 +75,7 @@ int main(int argc,char* argv[])
 		cout<<"Enter the csv file path: ";
 		cout.flush();
 		cin>>in_path;
-		out_path="sudoku.out";			//setting a default output name.
+		out_path="output.csv";			//setting a default output name.
 	}
 	else if(argc ==2)					//only input path is given
 	{
@@ -90,7 +94,7 @@ int main(int argc,char* argv[])
 	}
 
 	//defining a sudoku with proper number base. (default is base 10, which meanss 9x9 tables)
-	Sudoku my_sudoku(25);
+	Sudoku my_sudoku(4);
 
 	try
 	{
