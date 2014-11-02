@@ -3,20 +3,64 @@
 #include <fstream>
 #include <string>
 #include <list>
+#include <exception>
 #include <string.h>
+
+#define NDEBUG //comment out to disable asserts
 #include <assert.h>
+
 using namespace std;
 
-#define NUM_BASE 10
-#define TAB_SIZE (NUM_BASE-1)
+/**
+* Sudoku class. loads,solved,and prints a soduko with different sizes of 4,9,16,25,...
+* last edited 2014-11-01
+* @author Shervin Shahidi, sh.shervin@gmail.com
+*/
+class Sudoku
+{
+private:
+	const int TAB_SIZE;
+	int **table;
+public:
 
-//#define NDEBUG //comment out to disable asserts
+	/**
+	* The number base can be any integer^2, i.e., 4,9(default),16,25,... for 25 it takes a few hours though!
+	*/
+	Sudoku(int tab_size=9):TAB_SIZE(tab_size)
+	{
+		if((int)sqrt(TAB_SIZE) != sqrt(TAB_SIZE))
+		{
+			cerr<<"ERROR: the size of the table should be the complete square of an integer.\n Quitting..."<<endl;
+			exit(EXIT_FAILURE);
+		}
+		table = new int*[TAB_SIZE];
+		for(int i=0;i<TAB_SIZE;i++)
+			table[i]=new int[TAB_SIZE];
+	}
+	~Sudoku()
+	{
+		for(int i=0;i<TAB_SIZE;i++)
+			delete[] table[i];
+		delete[] table;
+	}
+
+	/**
+	* Loads a csv file, as an input to an unsolved soduko game
+	*/
+	void loadCSV(string path);
+	/**
+	* Solves the soduko.
+	* The recursive approach is used. For more optimality it can be easily converted to iterative using a std::stack.
+	* However, the iterative code will be harder to understand. So I left it this way.
+	*/
+	bool solvePuzzle();
+	/**
+	* prints the Soduko (either solved or not solved) to the given CSV file path.
+	*/
+	void printCSV(string out_path);
+};
 
 
-void loadCSV(string path,int[TAB_SIZE][TAB_SIZE]);
-bool solvePuzzle(int table[TAB_SIZE][TAB_SIZE]);
-//void calcOptions(int table[TAB_SIZE][TAB_SIZE],list<int> options[TAB_SIZE][TAB_SIZE]);
-void printCSV(string out_path,int table[TAB_SIZE][TAB_SIZE]);
 
 int main(int argc,char* argv[])
 {
@@ -41,28 +85,39 @@ int main(int argc,char* argv[])
 	}
 	else								//too many arguments are given as input
 	{
-		cout<<"ERROR: too many arguments"<<endl;
+		cerr<<"ERROR: too many arguments"<<endl;
 		exit(EXIT_FAILURE);
 	}
 
+	//defining a sudoku with proper number base. (default is base 10, which meanss 9x9 tables)
+	Sudoku my_sudoku(25);
 
-	//loading the csv file
-	int table[TAB_SIZE][TAB_SIZE];		//the sudoku table is 9x9.
-	loadCSV(in_path,table);
-
-	//solving the puzzle
-	//list<int> options[TAB_SIZE][TAB_SIZE];
-	//calcOptions(table,options);
-	solvePuzzle(table);
-
-	//printing the output in a CSV file
-	printCSV(out_path,table);
+	try
+	{
+		//loading the csv file
+		my_sudoku.loadCSV(in_path);
+		//solving the puzzle
+		if(my_sudoku.solvePuzzle())
+		{
+			//printing the output in a CSV file
+			my_sudoku.printCSV(out_path);
+			cout<<"done!"<<endl;
+		}
+		else
+			cout<<"No Answer was found. The given sudoku does not have an answer"<<endl;
+	}
+	catch(exception e)
+	{
+		cerr<<e.what()<<endl;
+		exit(EXIT_FAILURE);
+	}
+	
 
 	return 0;
 }
 
 
-bool solvePuzzle(int table[TAB_SIZE][TAB_SIZE])
+bool Sudoku::solvePuzzle()
 {
 	bool found=false;
 
@@ -81,8 +136,8 @@ bool solvePuzzle(int table[TAB_SIZE][TAB_SIZE])
 		return true;
 
 	//finding the possible options for the unkonwn cell
-	int hash[TAB_SIZE+1];
-	memset(hash,0,sizeof(hash));
+	int* hash=new int[TAB_SIZE+1];
+	memset(hash,0,(TAB_SIZE+1)*sizeof(int));
 	//noting down the numbers not allowed for the cell
 	//numbers taken on the row:
 	for(int k=0;k<TAB_SIZE;k++)
@@ -106,12 +161,13 @@ bool solvePuzzle(int table[TAB_SIZE][TAB_SIZE])
 		{
 			table[row][column]=k;
 			//updating the options for other cells:
-			found = solvePuzzle(table);
+			found = solvePuzzle();
 			if (found)
 				break;
 		}
 	}
 
+	delete[] hash; //releasing the memory
 	if(found)
 		return true;
 	else //no options remianed and the puzzle is not solved
@@ -122,10 +178,15 @@ bool solvePuzzle(int table[TAB_SIZE][TAB_SIZE])
 
 }
 
-void loadCSV(string path,int table[TAB_SIZE][TAB_SIZE])
+void Sudoku::loadCSV(string path)
 {
 	char delimiters[]=" ,;\t\r\n";
 	ifstream fin(path);
+	if(fin==NULL || fin.bad())
+	{
+		cerr<<"ERROR: could not open the input file.\n Quitting..."<<endl;
+		exit(EXIT_FAILURE);
+	}
 	int i=0;
 	while(!fin.eof())
 	{
@@ -149,16 +210,20 @@ void loadCSV(string path,int table[TAB_SIZE][TAB_SIZE])
 			}
 			sin>>table[i][j];
 			j++;
-			assert(j<=9 && "Allocateed table size is not enough for the given input");
+			assert(j<=TAB_SIZE && "Allocateed table size is not enough for the given input"); //for debugging
+			if(j>TAB_SIZE)
+				throw out_of_range("Allocateed table size is not enough for the given input");
 		}
 		i++;
-		assert(i<=9 && "Allocateed table size is not enough for the given input");
+		assert(i<=TAB_SIZE && "Allocateed table size is not enough for the given input"); //for debugging
+		if(j>TAB_SIZE)
+				throw out_of_range("Allocateed table size is not enough for the given input");
 	}
 
 	fin.close();
 }
 
-void printCSV(string out_path,int table[TAB_SIZE][TAB_SIZE])
+void Sudoku::printCSV(string out_path)
 {
 	ofstream fout(out_path);
 	for(int i=0;i<TAB_SIZE;i++)
@@ -172,38 +237,3 @@ void printCSV(string out_path,int table[TAB_SIZE][TAB_SIZE])
 	fout.flush();
 	fout.close();
 }
-
-/*
-void calcOptions(int table[TAB_SIZE][TAB_SIZE],list<int> options[TAB_SIZE][TAB_SIZE])
-{
-	for(int i=0;i<TAB_SIZE;i++)
-	{
-		for(int j=0;j<TAB_SIZE;j++)
-		{
-			if(table[i][j]!=0)
-				continue;
-			int hash[TAB_SIZE+1];
-			memset(hash,0,sizeof(hash));
-			//noting down the numbers not allowed for each cell in the table
-			//numbers taken on the row:
-			for(int k=0;k<TAB_SIZE;k++)
-				if(table[i][k]!=0)
-					hash[table[i][k]]=1;
-			//numbers taken on the column
-			for(int k=0;k<TAB_SIZE;k++)
-				if(table[k][j]!=0)
-					hash[table[k][j]]=1;
-			//numbers taken in the small surronding square (assuming it is always a 3x3 square, for base 10 numbers)
-			int limit= (int)sqrt(TAB_SIZE); //size of the small squares.
-			for(int k=0;k<limit;k++)
-				for(int m=0;m<limit;k++)
-					if(table[i- (i%limit)+k][j- (j*limit)+m]!=0)
-						hash[table[i- (i%limit)+k][j- (j*limit)+m]]=1;
-
-			//adding the reamining options to the list
-			for(int k=1;k<TAB_SIZE+1;k++)
-				if(hash[k]==0)
-					options[i][j].push_back(k);
-		}
-	}
-}*/
