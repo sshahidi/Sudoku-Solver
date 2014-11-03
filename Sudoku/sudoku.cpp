@@ -5,6 +5,10 @@
 #include <list>
 #include <exception>
 #include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <stdexcept>
 
 #define NDEBUG //comment out to disable asserts
 #include <assert.h>
@@ -31,7 +35,7 @@ public:
 		if((int)sqrt(TAB_SIZE) != sqrt(TAB_SIZE))
 		{
 			cerr<<"ERROR: the size of the table should be the complete square of an integer.\n Quitting..."<<endl;
-			exit(EXIT_FAILURE);
+			exit(1);
 		}
 		if(TAB_SIZE>16)
 		{
@@ -90,10 +94,10 @@ int main(int argc,char* argv[])
 	else								//too many arguments are given as input
 	{
 		cerr<<"ERROR: too many arguments"<<endl;
-		exit(EXIT_FAILURE);
+		exit(1);
 	}
 
-	//defining a sudoku with proper number base. (default is base 10, which meanss 9x9 tables)
+	//defining a sudoku with proper number base. (default is 9x9 tables)
 	Sudoku my_sudoku(4);
 
 	try
@@ -108,12 +112,12 @@ int main(int argc,char* argv[])
 			cout<<"done!"<<endl;
 		}
 		else
-			cout<<"No Answer was found. The given sudoku does not have an answer"<<endl;
+			cout<<"No Answer was found. The given sudoku does not have an answer."<<endl;
 	}
-	catch(exception e)
+	catch(const exception& e)
 	{
-		cerr<<e.what()<<endl;
-		exit(EXIT_FAILURE);
+		cerr<<"ERROR: "<<e.what()<<endl;
+		exit(1);
 	}
 	
 
@@ -185,13 +189,13 @@ bool Sudoku::solvePuzzle()
 void Sudoku::loadCSV(string path)
 {
 	char delimiters[]=" ,;\t\r\n";
-	ifstream fin(path);
+	ifstream fin(path.data());
 	if(fin==NULL || fin.bad())
 	{
 		cerr<<"ERROR: could not open the input file.\n Quitting..."<<endl;
-		exit(EXIT_FAILURE);
+		exit(1);
 	}
-	int i=0;
+	int i=0,j=0;
 	while(!fin.eof())
 	{
 		
@@ -202,7 +206,7 @@ void Sudoku::loadCSV(string path)
 			continue;
 
 		//tokenizing
-		int j=0;
+		j=0;
 		stringstream sin(line);
 		while(!sin.eof())
 		{
@@ -214,22 +218,23 @@ void Sudoku::loadCSV(string path)
 			}
 			sin>>table[i][j];
 			j++;
-			assert(j<=TAB_SIZE && "Allocateed table size is not enough for the given input"); //for debugging
+			assert(j<=TAB_SIZE && "Allocated table size is not enough for the given input"); //for debugging
 			if(j>TAB_SIZE)
-				throw out_of_range("Allocateed table size is not enough for the given input");
+				throw out_of_range("Allocated table size is not enough for the given input. Either the file format is wrong or an instance of the solver with proper table size should be defined.");
 		}
 		i++;
-		assert(i<=TAB_SIZE && "Allocateed table size is not enough for the given input"); //for debugging
+		assert(i<=TAB_SIZE && "Allocated table size is not enough for the given input"); //for debugging
 		if(j>TAB_SIZE)
-				throw out_of_range("Allocateed table size is not enough for the given input");
+				throw out_of_range("Allocated table size is not enough for the given input. Either the file format is wrong or an instance of the solver with proper table size should be defined.");
 	}
-
+	if (j!=TAB_SIZE || i!=TAB_SIZE)
+		throw range_error("Allocated table size is not correct for the given input. Either the file format is wrong or an instance of the solver with proper table size should be defined.");
 	fin.close();
 }
 
 void Sudoku::printCSV(string out_path)
 {
-	ofstream fout(out_path);
+	ofstream fout(out_path.data());
 	for(int i=0;i<TAB_SIZE;i++)
 	{
 		for(int j=0;j<TAB_SIZE-1;j++)
