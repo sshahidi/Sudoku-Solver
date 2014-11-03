@@ -13,7 +13,7 @@ This is Sudoku solver program written in C++. The input and output are CSV files
  The solver mainly has a solvePuzzle() function that solves the sudoku.
  The solver can read/write CSV files, given the correct size of the Sudoku.
 
- The Code is tested with Microsoft C++ compiler, but since it is not using any fancy libraries, it should run easily on any platform/compiler.
+ The Code is tested with Microsoft C++ compiler, but since it is not using any fancy libraries, it should run easily on any platform/compiler (maybe i need a make file for it, in fact I will add one when I get the chance).
 
  I would like to add an extra part to this code that can generate random sudokus with their answers, so that people can play the sudoku.
  
