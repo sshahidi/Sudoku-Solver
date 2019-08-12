@@ -1,8 +1,9 @@
 #Sudoku-Solver
+=============
 
 Date started: Nov-1-2014
 Shervin Shahidi
-=============
+
 
 This is Sudoku solver program written in C++. The input and output are CSV files. It can solve Sudoku with different sizes: 4x4, 9x9 (default), 16x16 (for sudoku experts!).
  
